@@ -1,0 +1,69 @@
+- name: Create SSL directory
+  become: yes
+  become_method: doas
+  file:
+    path: /etc/ssl/private
+    state: directory
+    mode: "u=rwx"
+
+- name: Create acme directory
+  become: yes
+  become_method: doas
+  file:
+    path: /var/www/acme
+    state: directory
+    mode: "u=rwx,g=rx,a=rx"
+
+- name: Ensure www directory for {{ DOMAIN }}
+  become: yes
+  become_method: doas
+  file:
+    path: /var/www/htdocs/{{ DOMAIN }}
+    state: directory
+    mode: "u=rwx,g=rx,o=rx"
+
+- name: Install temporary index.html
+  become: yes
+  become_method: doas
+  copy:
+    src: index.html
+    dest: /var/www/htdocs/{{ DOMAIN }}/
+
+- name: Install temporary httpd.conf
+  become: yes
+  become_method: doas
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd.conf
+
+- name: Check httpd configuration
+  become: yes
+  become_method: doas
+  shell:
+    cmd: httpd -n
+
+- name: Enable httpd server to start at bootup
+  become: yes
+  become_method: doas
+  shell:
+    cmd: rcctl enable httpd
+
+- name: Start httpd server
+  become: yes
+  become_method: doas
+  shell:
+    cmd: rcctl start httpd
+
+- name: Install acme client configuration
+  become: yes
+  become_method: doas
+  template:
+    src: acme-client.conf.j2
+    dest: /etc/acme-client.conf
+
+- name: Get certificates issued
+  become: yes
+  become_method: doas
+  shell:
+    cmd: acme-client -v  {{ DOMAIN }}
+  ignore_errors: yes

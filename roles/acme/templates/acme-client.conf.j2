@@ -1,0 +1,12 @@
+authority letsencrypt {
+        api url "https://acme-v02.api.letsencrypt.org/directory"
+        account key "/etc/acme/letsencrypt-privkey.pem"
+}
+
+domain "{{ DOMAIN }}" {
+        alternative names { {{ ALTERNATIVE_NAMES | join(' ') }} }
+        domain key "/etc/ssl/private/{{ DOMAIN }}.key"
+        domain certificate "/etc/ssl/{{ DOMAIN }}.crt"
+        domain full chain certificate "/etc/ssl/{{ DOMAIN }}.fullchain.pem"
+        sign with letsencrypt
+}

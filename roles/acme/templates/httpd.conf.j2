@@ -1,0 +1,13 @@
+# make all OpenBSD default mime types available
+types {
+  include "/usr/share/misc/mime.types"
+}
+
+server "{{ DOMAIN }}" {
+  listen on * port 80
+  root "/htdocs/{{ DOMAIN }}/"
+  location "/.well-known/acme-challenge/*" {
+    root "/acme"
+    request strip 2
+  }
+}

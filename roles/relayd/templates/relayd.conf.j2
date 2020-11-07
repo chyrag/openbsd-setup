@@ -1,0 +1,66 @@
+public="vio0"
+private="lo0"
+
+table <acme_challenge> { $private }
+acme_challenge_port="5000"
+
+table <httpd_https_redirect> { $private }
+httpd_https_redirect_port="6000"
+
+table <httpd_static_sites> { $private }
+httpd_static_sites_port="7000"
+
+domain="{{ DOMAIN }}"
+
+# Protocols
+
+http protocol "http" {
+  # ACME-compliant HTTP-01 challenge
+  # https://letsencrypt.org/docs/challenge-types/
+  pass request quick path "/.well-known/acme-challenge/*" forward to <acme_challenge>
+}
+
+http protocol "https_reverse_proxy" {
+  # Block all by default
+  block
+
+  # Start opening up
+  pass request header "Host" value $domain forward to <httpd_static_sites>
+  pass request header "Host" value "www.$domain" forward to <httpd_static_sites>
+  
+  tls keypair $domain
+  
+  # Pass address headers
+  match header set "X-Client-IP" value "$REMOTE_ADDR:$REMOTE_PORT"
+  match header set "X-Forwarded-For" value "$REMOTE_ADDR"
+  match header set "X-Forwarded-By" value "$SERVER_ADDR:$SERVER_PORT"
+
+  # Best practice security headers
+  # https://securityheaders.com
+  # https://www.marksayson.com/blog/setting_http_security_headers_in_rails/
+  match response header remove "Server"
+  match response header set "X-Frame-Options" value "SAMEORIGIN"
+  match response header set "X-XSS-Protection" value "1; mode=block"
+  match response header set "Referrer-Policy" value "strict-origin"
+  match response header set "Content-Security-Policy" value "default-src 'self'; script-src 'self' www.google.com www.gstatic.com; style-src 'self' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; frame-src 'self' www.google.com;"
+  match response header set "Feature-Policy" value "accelerometer 'none'; ambient-light-sensor 'none'; battery 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; usb 'none';"
+}
+
+# Relays
+
+relay "http" {
+  listen on $public port http
+
+  protocol "http"
+
+  forward to <httpd_https_redirect> port $httpd_https_redirect_port
+  forward to <acme_challenge> port $acme_challenge_port
+}
+
+relay "https" {
+  listen on $public port https tls
+
+  protocol "https_reverse_proxy"
+
+  forward with tls to <httpd_static_sites> port $httpd_static_sites_port
+}

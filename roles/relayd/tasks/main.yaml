@@ -1,0 +1,24 @@
+- name: Configure relayd
+  become: yes
+  become_method: doas
+  template:
+    src: relayd.conf.j2
+    dest: /etc/relayd.conf
+
+- name: Check relayd configuration
+  become: yes
+  become_method: doas
+  shell:
+    cmd: relayd -n
+
+- name: Enable relayd server
+  become: yes
+  become_method: doas
+  shell:
+    cmd: rcctl enable relayd
+
+- name: Start relayd server
+  become: yes
+  become_method: doas
+  shell:
+    cmd: rcctl start relayd

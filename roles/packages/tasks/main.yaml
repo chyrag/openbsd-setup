@@ -1,0 +1,6 @@
+- name: Install git
+  become: yes
+  become_method: doas
+  community.general.openbsd_pkg:
+    name: git
+    state: present

@@ -1,0 +1,44 @@
+# WIP
+# Per host access_log/error_log
+# Redirect http to https
+# Listen only on localhost
+
+# make all OpenBSD default mime types available
+types {
+  include "/usr/share/misc/mime.types"
+}
+
+localhost="lo0"
+acme_challenge_port="5000"
+https_redirect_port="6000"
+static_sites_port="7000"
+
+# HTTP traffic
+server "{{ DOMAIN }}" {
+  listen on $localhost port $acme_challenge_port
+  location "/.well-known/acme-challenge/*" {
+    root "/acme"
+    request strip 2
+  }
+  location "*" {
+    block drop
+  }
+}
+
+server "{{ DOMAIN }}" {
+  listen on $localhost port $https_redirect_port
+  block return 301 "https://{{ DOMAIN }}$DOCUMENT_URI"
+}
+
+# HTTPS
+server "{{ DOMAIN }}" {
+  listen on * tls port $static_sites_port
+  root "/htdocs/{{ DOMAIN }}"
+  tls {
+    certificate "/etc/ssl/{{ DOMAIN }}.crt"
+    key "/etc/ssl/private/{{ DOMAIN }}.key"
+  }
+  hsts {
+    preload
+  }
+}

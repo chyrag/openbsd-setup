@@ -1,0 +1,11 @@
+# Note: To be used only for initial setup. For updates to existing server, use
+# update.yaml
+
+- hosts: webserver
+  vars_files:
+    - vars/vars.yaml
+  roles:
+    - packages
+    - acme
+    - httpd
+    - relayd

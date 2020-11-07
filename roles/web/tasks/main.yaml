@@ -1,0 +1,14 @@
+- name: Ensure /www directory
+  become: yes
+  become_method: doas
+  file:
+    path: /www/kantharia.org.in
+    state: directory
+    mode: "u=rwx,g=rx,o=rx"
+
+# - name: Checkout website from github
+#   become: yes
+#   become_method: doas
+#   git:
+#     repo: 'https://github.com/chyrag/chyrag.github.io'
+#     dest: /www/kantharia.org.in/

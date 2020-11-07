@@ -1,0 +1,12 @@
+- name: Update openbsd
+  become: yes
+  become_method: doas
+  shell:
+    cmd: sysupgrade
+  ignore_errors: yes
+
+- name: Update packages
+  become: yes
+  become_method: doas
+  shell:
+    cmd: pkg_add -uv
